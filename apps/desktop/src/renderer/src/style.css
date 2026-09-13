@@ -1,0 +1,220 @@
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #1e1e1e;
+  color: #d4d4d4;
+}
+
+#toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #252526;
+  border-bottom: 1px solid #3c3c3c;
+  flex: 0 0 auto;
+}
+
+#toolbar button {
+  background: #0e639c;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+#toolbar button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+#toolbar select {
+  background: #3c3c3c;
+  color: #fff;
+  border: 1px solid #4a4a4a;
+  border-radius: 4px;
+  padding: 5px 8px;
+  font-size: 13px;
+}
+
+#status {
+  margin-left: auto;
+  font-family: monospace;
+  font-size: 12px;
+  color: #9aa0a6;
+}
+
+#editor {
+  flex: 1 1 auto;
+  min-height: 0;
+  border-bottom: 1px solid #3c3c3c;
+}
+
+#panelTabs {
+  display: flex;
+  gap: 2px;
+  padding: 4px 8px 0;
+  background: #252526;
+  flex: 0 0 auto;
+}
+
+#panelTabs .tab {
+  background: transparent;
+  color: #9aa0a6;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 12.5px;
+}
+
+#panelTabs .tab.active {
+  color: #fff;
+  border-bottom-color: #0e639c;
+}
+
+#panelBody {
+  flex: 0 0 240px;
+  position: relative;
+  background: #0d1117;
+}
+
+.panel {
+  display: none;
+  height: 100%;
+  overflow: auto;
+}
+
+.panel.active {
+  display: block;
+}
+
+#output {
+  margin: 0;
+  padding: 12px;
+  font-family: 'SFMono-Regular', Menlo, Consolas, monospace;
+  font-size: 13px;
+  white-space: pre-wrap;
+  color: #d9dde3;
+  box-sizing: border-box;
+}
+
+#terminal {
+  padding: 4px;
+  box-sizing: border-box;
+}
+
+#tests {
+  padding: 8px 12px;
+  box-sizing: border-box;
+  font-size: 13px;
+}
+
+.test-case {
+  border: 1px solid #2b313d;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+}
+
+.test-case.pass {
+  border-left: 3px solid #2f7a4f;
+}
+
+.test-case.fail {
+  border-left: 3px solid #b23b3b;
+}
+
+.test-case .name {
+  font-weight: 600;
+}
+
+.test-case .badge {
+  float: right;
+  font-family: monospace;
+  font-size: 11px;
+}
+
+.test-case.pass .badge {
+  color: #5cbf8a;
+}
+
+.test-case.fail .badge {
+  color: #e08279;
+}
+
+.test-case pre {
+  margin: 6px 0 0;
+  padding: 6px 8px;
+  background: #161b22;
+  font-size: 12px;
+  white-space: pre-wrap;
+  border-radius: 4px;
+}
+
+#commandPaletteOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  padding-top: 12vh;
+  z-index: 10;
+}
+
+/* Without this, the `hidden` attribute this overlay is toggled with in
+   main.ts does nothing — an authored `display` rule on an element always
+   beats the browser's default `[hidden] { display: none }`, regardless of
+   selector specificity, so closePalette() silently failed to hide anything. */
+#commandPaletteOverlay[hidden] {
+  display: none;
+}
+
+#commandPalette {
+  width: 480px;
+  max-height: 60vh;
+  background: #252526;
+  border: 1px solid #454545;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+}
+
+#commandPaletteInput {
+  background: #3c3c3c;
+  color: #fff;
+  border: none;
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+}
+
+#commandPaletteList {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+}
+
+#commandPaletteList li {
+  padding: 8px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+#commandPaletteList li.selected {
+  background: #0e639c;
+  color: #fff;
+}

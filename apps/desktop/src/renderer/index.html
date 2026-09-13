@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; worker-src 'self' blob:;"
+    />
+    <title>Practice IDE</title>
+  </head>
+  <body>
+    <div id="toolbar">
+      <select id="language">
+        <option value="python">Python</option>
+        <option value="java">Java</option>
+        <option value="cpp">C++</option>
+      </select>
+      <button id="run">Run ▶ (Ctrl/Cmd+Enter)</button>
+      <button id="save">Save</button>
+      <button id="runTests">Run Tests</button>
+      <span id="status"></span>
+    </div>
+    <div id="editor"></div>
+
+    <div id="panelTabs">
+      <button class="tab active" data-panel="output">Output</button>
+      <button class="tab" data-panel="terminal">Terminal</button>
+      <button class="tab" data-panel="tests">Tests</button>
+    </div>
+    <div id="panelBody">
+      <pre id="output" class="panel active"></pre>
+      <div id="terminal" class="panel"></div>
+      <div id="tests" class="panel"></div>
+    </div>
+
+    <div id="commandPaletteOverlay" hidden>
+      <div id="commandPalette">
+        <input id="commandPaletteInput" placeholder="Type a command… (Esc to close)" autocomplete="off" />
+        <ul id="commandPaletteList"></ul>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
