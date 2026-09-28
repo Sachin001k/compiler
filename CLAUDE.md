@@ -14,14 +14,47 @@ point of the product.**
 ## Status
 
 **Current phase: 3 — terminal, command palette, local test runner. Core loop working.**
+**Also closed out: Phase 1's file explorer leftover.**
 
 The desktop app now has: an xterm.js terminal backed by a real `node-pty`
 shell (independent of the Run flow), a VS Code-style command palette
-(Ctrl/Cmd+Shift+P, fuzzy-ish substring filter, arrow-key nav), and a Tests
+(Ctrl/Cmd+Shift+P, fuzzy-ish substring filter, arrow-key nav), a Tests
 panel that runs `workspace/tests/<language>.json` cases (stdin → expected
-stdout) against the active runner and shows pass/fail per case. Verified
-end-to-end: typecheck + build clean, live `npm run dev` launch with no
-runtime errors.
+stdout) against the active runner and shows pass/fail per case, and a real
+Explorer sidebar (`src/main/fileExplorer.ts` + the tree UI in
+`src/renderer/src/main.ts`) showing the actual workspace folder — click any
+file to open it; the three known template files (`main.py`, `Main.java`,
+`main.cpp`) drive the language dropdown/Run/Run Tests as before, anything
+else (e.g. a `tests/*.json` case file) opens as a plain view/edit-only file
+with Run disabled. Verified end-to-end: typecheck + build clean, live
+`npm run dev` launch with no runtime errors.
+
+**Also added: "Open Folder…"** (sidebar button + command palette entry) —
+a native folder picker (`dialog.showOpenDialog`) lets the student browse/edit
+files from any folder on disk (e.g. an existing project), shown in the same
+Explorer tree via a separate `browseRoot` in the main process. Deliberately
+scoped: Run and Run Tests stay limited to the practice workspace no matter
+what's being browsed — opening another folder never makes its code
+executable, matching the doc's "filesystem scope restricted to the
+workspace" principle. "Practice Workspace" switches the sidebar back.
+
+**Also added: auto-closing brackets/quotes + full auto-indent** —
+`autoClosingBrackets`/`autoClosingQuotes` set to `'languageDefined'` and
+`autoIndent: 'full'` in `src/renderer/src/main.ts`'s editor options. This
+was previously off (`autoClosingBrackets: 'never'`), per doc §5.1's original
+config — but the doc itself flagged that specific choice as "arguable — off
+by default, toggle in settings", since mirroring a typed `(` back at the
+student is an editing mechanic (like bracket-pair colorization, already on),
+not code-authorship assistance. Doesn't touch the no-suggestions rule.
+
+**Fixed:** switching languages (dropdown or command palette) was force-
+switching the Explorer sidebar back to the practice workspace, even if the
+student had an external folder open via "Open Folder…" — annoying, since
+the whole point of that feature is to stay put while you work. `loadLanguage()`
+in `src/renderer/src/main.ts` no longer touches `sidebarSource`; it only
+refreshes the active-file highlight (a no-op if the currently-shown tree is
+an external folder that doesn't contain that path). "Practice Workspace"
+remains the way to switch back manually.
 
 Known gaps, honestly scoped rather than faked:
 - **GitHub push doesn't happen yet.** `SyncWorker` drains the outbox and
@@ -41,19 +74,29 @@ Known gaps, honestly scoped rather than faked:
 - **Test runner recompiles per case** for Java/C++ instead of compiling once
   and running N times — fine at practice scale (a handful of cases), a
   real inefficiency at anything larger.
-- Phase 1's file explorer gap is still open (one fixed file per language,
-  not a real multi-file workspace).
+- The Explorer sidebar is view/browse/edit only — no create/rename/delete
+  file UI yet. Good enough for "basic file explorer" (the original Phase 1
+  ask); a fuller file-management UI is a later nice-to-have, not scoped now.
 
-**Fixed:** compiled artifacts (`Main.class`, the C++ binary) were getting
-swept up by `git add .` on every auto-commit — a real correctness bug, not
-a scoped-out gap. `JavaRunner`/`CppRunner` now implement `clean(workingDir)`
-(interface method, was previously a no-op stub with no way to know which
-directory to clean), called after every run and every test suite, before
-the commit happens. A workspace `.gitignore` (`*.class`, the binary's fixed
-name, `__pycache__/`) is the backstop in case `clean()` is ever skipped —
-see `getWorkspaceDir()` in `src/main/workspace.ts`. Verified directly against
-the real runners (bundled with esbuild, run outside Electron): both left an
-artifact right after `run()` and had it gone right after `clean()`.
+**Fixed:** compiled artifacts (`Main.class`, the C++ binary, and — caught in
+a second pass — macOS's `.dSYM` debug-symbol bundle that `g++ -g` also
+leaves behind) were getting swept up by `git add .` on every auto-commit —
+a real correctness bug, not a scoped-out gap, and one that had already
+happened for real: the `.dSYM` bundle was found committed in this machine's
+actual workspace repo (`Attempt #1`) during this fix, left there from
+earlier manual testing. `JavaRunner`/`CppRunner` now implement
+`clean(workingDir)` (interface method, was previously a no-op stub with no
+way to know which directory to clean), called after every run and every
+test suite, before the commit happens. A workspace `.gitignore` (`*.class`,
+the binary's fixed name, its `.dSYM` bundle, `__pycache__/`) is the backstop
+in case `clean()` is ever skipped — see `getWorkspaceDir()` in
+`src/main/workspace.ts`. Verified directly against the real runners
+(bundled with esbuild, run outside Electron) for both the binary and the
+`.dSYM` bundle: both existed right after `run()` and were gone right after
+`clean()`. Did not rewrite the existing repo's git history for the
+already-committed leak (a two-commit local practice repo, not worth a
+history rewrite) — the fix is forward-looking; the next commit naturally
+records its removal.
 
 **Fixed:** the command palette (Ctrl/Cmd+Shift+P) couldn't be closed —
 Escape and clicking outside both called `closePalette()`, which correctly
@@ -127,6 +170,32 @@ issue):**
   then write `node_modules/electron/path.txt` with the platform-specific
   relative path (e.g. `Electron.app/Contents/MacOS/Electron` on macOS).
 
+## Claude integration ("Explain Error")
+
+Deliberately scoped to stay inside the doc's own rule of thumb (§5.1: "if it
+happens after they run their own code against a real compiler, it's feedback,
+and it's the point of the product") rather than the thing the doc explicitly
+rules out ("AI chat / inline generation — same reason the product exists").
+Concretely, that means:
+
+- **Manual only.** A button in the toolbar / a command palette entry —
+  never triggered automatically, never while the student is typing.
+- **Error text only, never source.** `src/main/claudeAssistant.ts`'s
+  `explainError()` sends only the captured Output-panel text from the last
+  failed run — the student's actual code never leaves the machine.
+- **Read-only, always.** The response renders in its own "Explain" panel
+  (`src/renderer/src/main.ts`); nothing it returns is ever written into the
+  editor. The system prompt itself also instructs the model not to write
+  corrected code, even if asked — the constraint lives in the request, not
+  just the UI.
+- Uses `claude-opus-5` via the official `@anthropic-ai/sdk` (TypeScript).
+
+**Setup:** run "Set Claude API Key…" from the command palette (stores it
+encrypted via Electron's `safeStorage`, in `userData/claude-api-key.enc`),
+or set an `ANTHROPIC_API_KEY` environment variable before launching the app
+(checked first, takes priority). Without either, clicking "Explain Error"
+shows a clear message telling you to set one — it doesn't fail silently.
+
 ## Tech stack
 
 | Layer | Choice |
@@ -137,6 +206,7 @@ issue):**
 | Local Git | System Git via CLI wrapper (fallback: isomorphic-git) |
 | Local state | better-sqlite3 |
 | GitHub sync | Octokit, behind a GitHub App |
+| Error explanation | `@anthropic-ai/sdk` (`claude-opus-5`) — manual, error-text-only, read-only (see "Claude integration" above) |
 | Packaging | electron-builder + auto-update |
 | Backend (Phase 4) | Node.js (NestJS), PostgreSQL, Redis job queue |
 | Cloud judge sandbox (Phase 4) | Docker-isolated workers |
@@ -195,7 +265,7 @@ Proves the no-suggestion editing model feels right before adding languages.
 - [x] `PythonRunner`: `detect()` via `python3 --version`, `run()` via child process with `-I` isolated mode, `timeoutMs`/`maxOutputBytes` enforced — originally `src/main/pythonRunner.ts`, superseded in Phase 2 by `packages/language-runners/src/PythonRunner.ts`
 - [x] Output panel streaming stdout/stderr from the child process
 - [x] Manual "Save to GitHub" button — originally local-only in `src/main/gitSave.ts`, superseded in Phase 2 by `packages/git-sync`'s auto-commit-per-run (no manual button anymore); actual GitHub push still needs the GitHub App + Octokit wiring from Phase 4
-- [ ] Basic file explorer, single workspace folder — currently a single fixed `main.py`, no multi-file explorer yet
+- [x] Basic file explorer, single workspace folder — done in Phase 3, alongside the terminal/palette/tests work: `src/main/fileExplorer.ts` (tree + path-traversal-safe read/write) + the Explorer sidebar in `src/renderer/src/main.ts`; view/browse/edit only, no create/rename/delete yet
 
 ### Phase 2 — Java & C++ runners, auto-commit, offline queue
 - [x] `LanguageRunner` interface + `BaseRunner` abstract class (see mapping above) — `packages/language-runners/src/{LanguageRunner,BaseRunner}.ts`

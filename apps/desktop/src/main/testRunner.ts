@@ -40,6 +40,16 @@ export function loadTestCases(workspaceDir: string, language: LanguageId): TestC
   return JSON.parse(readFileSync(filePath, 'utf-8')) as TestCase[]
 }
 
+// Called once at startup, same reasoning as workspace.ts's
+// ensureWorkspaceInitialized() — the Explorer sidebar should show all three
+// languages' test files immediately, not just whichever one the student
+// happens to run tests for first.
+export function ensureDefaultTestFiles(workspaceDir: string): void {
+  for (const language of Object.keys(DEFAULT_TESTS) as LanguageId[]) {
+    loadTestCases(workspaceDir, language)
+  }
+}
+
 export async function runTests(
   workspaceDir: string,
   language: LanguageId,

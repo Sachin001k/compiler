@@ -1,12 +1,14 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { ConnectivityWatcher, LocalRepoManager, Outbox, SyncWorker } from '@practice-ide/git-sync'
 import { resolveRunner } from '@practice-ide/language-runners'
 import type { ExecOptions, LanguageId } from '@practice-ide/shared-types'
+import { explainError, hasApiKey, setApiKey } from './claudeAssistant'
+import { buildFileTree, resolveWorkspacePath } from './fileExplorer'
 import { TerminalSession } from './terminal'
-import { runTests } from './testRunner'
-import { getFilePath, getWorkspaceDir } from './workspace'
+import { ensureDefaultTestFiles, runTests } from './testRunner'
+import { ensureWorkspaceInitialized, getFilePath } from './workspace'
 
 const RUN_OPTIONS: Omit<ExecOptions, 'workingDir'> = {
   timeoutMs: 10_000,
@@ -18,10 +20,18 @@ const WORKSPACE_ID = 'default'
 
 let mainWindow: BrowserWindow | null = null
 let terminal: TerminalSession | null = null
+// A folder the student opened via "Open Folder…" to browse/edit — separate
+// from `workspaceDir` on purpose. Run/Run Tests only ever operate on the
+// fixed practice workspace (doc's "filesystem scope restricted to the
+// workspace" principle); this is browse/edit-only, never executed.
+let browseRoot: string | null = null
 
-const workspaceDir = getWorkspaceDir()
+const workspaceDir = ensureWorkspaceInitialized()
+ensureDefaultTestFiles(workspaceDir)
+const userDataDir = app.getPath('userData')
+
 const repo = new LocalRepoManager(workspaceDir)
-const outbox = new Outbox(join(app.getPath('userData'), 'app.db'))
+const outbox = new Outbox(join(userDataDir, 'app.db'))
 const connectivity = new ConnectivityWatcher()
 const syncWorker = new SyncWorker(outbox, connectivity)
 
@@ -84,6 +94,56 @@ ipcMain.handle('run-tests', async (_event, language: LanguageId, content: string
   const filePath = getFilePath(language)
   writeFileSync(filePath, content, 'utf-8')
   return runTests(workspaceDir, language, filePath, RUN_OPTIONS)
+})
+
+ipcMain.handle('list-workspace-tree', () => buildFileTree(workspaceDir))
+
+ipcMain.handle('read-any-file', (_event, relativePath: string) => {
+  const filePath = resolveWorkspacePath(workspaceDir, relativePath)
+  return { content: readFileSync(filePath, 'utf-8') }
+})
+
+ipcMain.handle('write-any-file', (_event, relativePath: string, content: string) => {
+  const filePath = resolveWorkspacePath(workspaceDir, relativePath)
+  writeFileSync(filePath, content, 'utf-8')
+  return { savedAt: Date.now() }
+})
+
+ipcMain.handle('pick-folder', async () => {
+  if (!mainWindow) return null
+  const result = await dialog.showOpenDialog(mainWindow, { properties: ['openDirectory'] })
+  if (result.canceled || result.filePaths.length === 0) return null
+  browseRoot = result.filePaths[0]
+  return browseRoot
+})
+
+ipcMain.handle('browse-list-tree', () => (browseRoot ? buildFileTree(browseRoot) : []))
+
+ipcMain.handle('browse-read-file', (_event, relativePath: string) => {
+  if (!browseRoot) throw new Error('No folder open')
+  const filePath = resolveWorkspacePath(browseRoot, relativePath)
+  return { content: readFileSync(filePath, 'utf-8') }
+})
+
+ipcMain.handle('browse-write-file', (_event, relativePath: string, content: string) => {
+  if (!browseRoot) throw new Error('No folder open')
+  const filePath = resolveWorkspacePath(browseRoot, relativePath)
+  writeFileSync(filePath, content, 'utf-8')
+  return { savedAt: Date.now() }
+})
+
+ipcMain.handle('has-api-key', () => hasApiKey(userDataDir))
+
+ipcMain.handle('set-api-key', (_event, key: string) => {
+  setApiKey(userDataDir, key)
+})
+
+ipcMain.handle('explain-error', async (_event, errorText: string) => {
+  try {
+    return { explanation: await explainError(userDataDir, errorText) }
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) }
+  }
 })
 
 ipcMain.handle('sync-status', () => ({ pending: outbox.pending().length }))

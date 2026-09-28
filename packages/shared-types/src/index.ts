@@ -32,3 +32,10 @@ export interface RunResult {
   toolchainMissing: boolean
   compileError?: string
 }
+
+export interface FileTreeNode {
+  name: string
+  relativePath: string
+  isDirectory: boolean
+  children?: FileTreeNode[]
+}

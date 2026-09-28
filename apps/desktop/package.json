@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1",
     "@practice-ide/git-sync": "*",
     "@practice-ide/language-runners": "*",
     "@practice-ide/sandbox": "*",

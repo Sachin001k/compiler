@@ -18,17 +18,11 @@ const TEMPLATES: Record<LanguageId, { fileName: string; content: string }> = {
 
 // Backstop for JavaRunner/CppRunner's clean() — if a crash or a future
 // runner ever skips cleanup, these patterns still never reach a commit.
-const GITIGNORE = '*.class\npractice-ide-attempt.out\n__pycache__/\n'
+const GITIGNORE = '*.class\npractice-ide-attempt.out\npractice-ide-attempt.out.dSYM/\n__pycache__/\n'
 
 export function getWorkspaceDir(): string {
   const dir = join(app.getPath('documents'), 'PracticeIDE', 'workspace')
   mkdirSync(dir, { recursive: true })
-
-  const gitignorePath = join(dir, '.gitignore')
-  if (!existsSync(gitignorePath)) {
-    writeFileSync(gitignorePath, GITIGNORE, 'utf-8')
-  }
-
   return dir
 }
 
@@ -39,4 +33,23 @@ export function getFilePath(language: LanguageId): string {
     writeFileSync(filePath, content, 'utf-8')
   }
   return filePath
+}
+
+// Called once at startup so the Explorer sidebar shows a complete tree
+// immediately, rather than only whichever language the student happens to
+// open first (getFilePath's create-on-first-open is still there as a
+// fallback, but shouldn't be the only path that populates the workspace).
+export function ensureWorkspaceInitialized(): string {
+  const dir = getWorkspaceDir()
+
+  const gitignorePath = join(dir, '.gitignore')
+  if (!existsSync(gitignorePath)) {
+    writeFileSync(gitignorePath, GITIGNORE, 'utf-8')
+  }
+
+  for (const language of Object.keys(TEMPLATES) as LanguageId[]) {
+    getFilePath(language)
+  }
+
+  return dir
 }

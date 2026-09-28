@@ -9,34 +9,68 @@
     <title>Practice IDE</title>
   </head>
   <body>
-    <div id="toolbar">
-      <select id="language">
-        <option value="python">Python</option>
-        <option value="java">Java</option>
-        <option value="cpp">C++</option>
-      </select>
-      <button id="run">Run ▶ (Ctrl/Cmd+Enter)</button>
-      <button id="save">Save</button>
-      <button id="runTests">Run Tests</button>
-      <span id="status"></span>
-    </div>
-    <div id="editor"></div>
+    <div id="appShell">
+      <aside id="sidebar">
+        <div id="sidebarHeader">
+          <span id="sidebarTitle">Explorer</span>
+          <div id="sidebarActions">
+            <button id="openFolder" title="Open a folder to browse/edit — Run stays limited to the practice workspace">
+              Open Folder…
+            </button>
+            <button id="showWorkspace" title="Back to the practice workspace" hidden>Practice Workspace</button>
+          </div>
+        </div>
+        <div id="sidebarRoot"></div>
+        <div id="fileTree"></div>
+      </aside>
 
-    <div id="panelTabs">
-      <button class="tab active" data-panel="output">Output</button>
-      <button class="tab" data-panel="terminal">Terminal</button>
-      <button class="tab" data-panel="tests">Tests</button>
-    </div>
-    <div id="panelBody">
-      <pre id="output" class="panel active"></pre>
-      <div id="terminal" class="panel"></div>
-      <div id="tests" class="panel"></div>
+      <div id="mainColumn">
+        <div id="toolbar">
+          <select id="language">
+            <option value="python">Python</option>
+            <option value="java">Java</option>
+            <option value="cpp">C++</option>
+          </select>
+          <button id="run">Run ▶ (Ctrl/Cmd+Enter)</button>
+          <button id="save">Save</button>
+          <button id="runTests">Run Tests</button>
+          <button id="explainError" disabled title="Explain the last error with Claude — read-only, never edits your code">
+            Explain Error
+          </button>
+          <span id="status"></span>
+        </div>
+        <div id="editor"></div>
+
+        <div id="panelTabs">
+          <button class="tab active" data-panel="output">Output</button>
+          <button class="tab" data-panel="terminal">Terminal</button>
+          <button class="tab" data-panel="tests">Tests</button>
+          <button class="tab" data-panel="explain">Explain</button>
+        </div>
+        <div id="panelBody">
+          <pre id="output" class="panel active"></pre>
+          <div id="terminal" class="panel"></div>
+          <div id="tests" class="panel"></div>
+          <div id="explain" class="panel"></div>
+        </div>
+      </div>
     </div>
 
     <div id="commandPaletteOverlay" hidden>
       <div id="commandPalette">
         <input id="commandPaletteInput" placeholder="Type a command… (Esc to close)" autocomplete="off" />
         <ul id="commandPaletteList"></ul>
+      </div>
+    </div>
+
+    <div id="apiKeyOverlay" hidden>
+      <div id="apiKeyDialog">
+        <div id="apiKeyLabel">Claude API key (used only for "Explain Error", stored encrypted on this machine)</div>
+        <input id="apiKeyInput" type="password" placeholder="sk-ant-…" autocomplete="off" />
+        <div id="apiKeyActions">
+          <button id="apiKeySave">Save</button>
+          <button id="apiKeyCancel">Cancel</button>
+        </div>
       </div>
     </div>
 

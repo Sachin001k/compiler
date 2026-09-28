@@ -12,6 +12,113 @@ body {
   color: #d4d4d4;
 }
 
+#appShell {
+  display: flex;
+  flex-direction: row;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+#sidebar {
+  flex: 0 0 220px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: #181818;
+  border-right: 1px solid #3c3c3c;
+  font-size: 13px;
+}
+
+#sidebarHeader {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px 6px;
+}
+
+#sidebarTitle {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9aa0a6;
+}
+
+#sidebarActions {
+  display: flex;
+  gap: 4px;
+}
+
+#sidebarActions button {
+  background: transparent;
+  color: #9aa0a6;
+  border: 1px solid #3c3c3c;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 10.5px;
+  cursor: pointer;
+}
+
+#sidebarActions button:hover {
+  background: #2a2d2e;
+  color: #fff;
+}
+
+#sidebarRoot {
+  flex: 0 0 auto;
+  padding: 0 12px 6px;
+  font-size: 11px;
+  color: #6a7178;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#fileTree {
+  flex: 1 1 auto;
+  overflow-y: auto;
+}
+
+#fileTree ul {
+  list-style: none;
+  margin: 0;
+  padding-left: 14px;
+}
+
+#fileTree > ul {
+  padding-left: 0;
+}
+
+.tree-row {
+  padding: 3px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tree-row:hover {
+  background: #2a2d2e;
+}
+
+.tree-row.active {
+  background: #37373d;
+  color: #fff;
+}
+
+.tree-row.tree-folder {
+  color: #cfd3d6;
+  font-weight: 500;
+}
+
+#mainColumn {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 #toolbar {
   display: flex;
   align-items: center;
@@ -217,4 +324,73 @@ body {
 #commandPaletteList li.selected {
   background: #0e639c;
   color: #fff;
+}
+
+#explain {
+  padding: 12px;
+  box-sizing: border-box;
+  font-size: 13px;
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+#apiKeyOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+/* Same pitfall as #commandPaletteOverlay — an authored `display` here
+   overrides the browser's default `[hidden] { display: none }`, so this
+   override is required or the dialog can never be closed. */
+#apiKeyOverlay[hidden] {
+  display: none;
+}
+
+#apiKeyDialog {
+  width: 420px;
+  background: #252526;
+  border: 1px solid #454545;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+#apiKeyLabel {
+  font-size: 12px;
+  color: #9aa0a6;
+  margin-bottom: 8px;
+}
+
+#apiKeyInput {
+  width: 100%;
+  box-sizing: border-box;
+  background: #3c3c3c;
+  color: #fff;
+  border: 1px solid #4a4a4a;
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-size: 13px;
+  outline: none;
+}
+
+#apiKeyActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+#apiKeyActions button {
+  background: #0e639c;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 13px;
 }

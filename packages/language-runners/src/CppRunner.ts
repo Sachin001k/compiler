@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process'
-import { unlink } from 'node:fs/promises'
+import { rm, unlink } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { CompileResult, ExecOptions, LanguageId } from '@practice-ide/shared-types'
 import { BaseRunner } from './BaseRunner'
@@ -35,8 +35,12 @@ export class CppRunner extends BaseRunner {
 
   // Binary is discarded after every run (doc §5.2: "discarded after run
   // unless pinned") — it's a build artifact, not source, and must not end
-  // up in the student's auto-committed git history.
+  // up in the student's auto-committed git history. `-g` also makes macOS's
+  // g++/clang emit a companion `<binary>.dSYM` debug-symbol *directory*
+  // alongside it — easy to miss since it's not deleted by removing the
+  // binary itself, but it's exactly the same class of leak.
   async clean(workingDir: string): Promise<void> {
     await unlink(join(workingDir, ARTIFACT_NAME)).catch(() => undefined)
+    await rm(join(workingDir, `${ARTIFACT_NAME}.dSYM`), { recursive: true, force: true }).catch(() => undefined)
   }
 }
